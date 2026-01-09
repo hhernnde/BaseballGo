@@ -1,0 +1,48 @@
+# Virtual environment
+venv/
+env/
+*.pyc
+__pycache__/
+
+# Git
+.git/
+.gitignore
+
+# Environment variables (should be passed at runtime, not baked into image)
+.env
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation and development files
+README.md
+CLAUDE.md
+*.md
+
+# Python cache
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+
+# Logs
+*.log
+
+# Infrastructure and scripts
+infrastructure/
+scripts/
+
+# Local CLI entry point (not needed in container)
+main.py
+
+# Docker files
+Dockerfile
+.dockerignore
+docker-compose*.yml

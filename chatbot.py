@@ -88,3 +88,67 @@ class Chatbot:
         Clear the conversation history.
         """
         self.chat_history.clear()
+
+
+class ChatbotManager:
+    """
+    Manages multiple chatbot sessions for concurrent users.
+    Each session gets its own Chatbot instance with separate conversation history.
+    """
+
+    def __init__(self, config):
+        """
+        Initialize the manager with configuration.
+
+        Args:
+            config (dict): Configuration dictionary passed to each Chatbot instance
+        """
+        self.config = config
+        self.sessions = {}  # session_id -> Chatbot instance
+
+    def get_or_create_session(self, session_id):
+        """
+        Get existing session or create a new one.
+
+        Args:
+            session_id (str): Unique identifier for the session
+
+        Returns:
+            Chatbot: The chatbot instance for this session
+        """
+        if session_id not in self.sessions:
+            self.sessions[session_id] = Chatbot(self.config)
+        return self.sessions[session_id]
+
+    def send_message(self, session_id, message):
+        """
+        Send a message to a specific session.
+
+        Args:
+            session_id (str): The session identifier
+            message (str): The user's message
+
+        Returns:
+            str: The chatbot's response
+        """
+        chatbot = self.get_or_create_session(session_id)
+        return chatbot.send_message(message)
+
+    def clear_session(self, session_id):
+        """
+        Clear and remove a session.
+
+        Args:
+            session_id (str): The session to clear
+        """
+        if session_id in self.sessions:
+            del self.sessions[session_id]
+
+    def list_sessions(self):
+        """
+        List all active session IDs.
+
+        Returns:
+            list: List of active session IDs
+        """
+        return list(self.sessions.keys())

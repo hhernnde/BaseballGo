@@ -94,3 +94,29 @@ Note: Avoid Python 3.14 as many packages lack pre-built wheels and require C++ c
 **Adjusting memory behavior**: Modify trimming logic in [chatbot.py:64-67](chatbot.py#L64-L67) within `send_message()`
 
 **Adding new commands**: Extend command handling in [main.py:56-67](main.py#L56-L67) within the main loop
+
+## AWS Bedrock AgentCore Deployment
+
+The API (`api.py`) is configured for AWS Bedrock AgentCore Runtime compatibility using the HTTP protocol.
+
+### AgentCore Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/ping` | GET | Health check (returns HTTP 200) |
+| `/invocations` | POST | Agent invocation |
+| `/invocations/{session_id}` | DELETE | Clear session |
+| `/sessions` | GET | List active sessions |
+
+Port: **8080** (required by AgentCore HTTP protocol)
+
+### Deploy to ECR (ARM64)
+
+Note: Replace AWS account ID and region with your own values.
+```bash
+# Login to ECR
+aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+
+# Build and push ARM64 image
+docker buildx build --platform linux/arm64 -t ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/baseballgo:latest --push .
+```
