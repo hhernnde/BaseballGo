@@ -39,9 +39,6 @@ CLAUDE.md
 infrastructure/
 scripts/
 
-# Local CLI entry point (not needed in container)
-main.py
-
 # Docker files
 Dockerfile
 .dockerignore

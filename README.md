@@ -1,25 +1,26 @@
-# AI Chatbot with OpenAI and LangChain
+# BaseballGo - AI Chatbot API
 
-A simple command-line conversational AI chatbot powered by OpenAI's API and LangChain. The chatbot maintains conversation history and provides an interactive terminal interface.
+A conversational AI chatbot API powered by OpenAI and LangChain, designed for deployment on AWS Bedrock AgentCore Runtime.
 
 ## Features
 
-- Interactive command-line interface
-- Conversation history with sliding window memory
-- Multiple commands for controlling the chat experience
+- RESTful API with FastAPI
+- AWS Bedrock AgentCore compatible
+- Docker containerization
+- ARM64 support for AWS deployment
 - Secure API key management with environment variables
 - Error handling for robust operation
 
 ## Prerequisites
 
-- Python 3.8 or higher
+- Python 3.12+ (avoid Python 3.14)
 - OpenAI API key
+- Docker (for containerization)
+- AWS Account (for AgentCore deployment)
 
 ## Setup Instructions
 
 ### 1. Clone or Download the Repository
-
-If you haven't already, navigate to the project directory:
 
 ```bash
 cd BaseballGo
@@ -55,57 +56,100 @@ pip install -r requirements.txt
 
 ### 5. Configure Environment Variables
 
-Edit the `.env` file in the project root and replace the placeholder with your actual API key:
+Edit the `.env` file in the project root:
 
 ```env
 OPENAI_API_KEY=sk-your-actual-api-key-here
 MODEL_NAME=gpt-4o-mini
-MAX_HISTORY_LENGTH=10
 ```
 
 ## Usage
 
-### Running the Chatbot
+### Running Locally
 
 ```bash
-python main.py
+# Start the FastAPI server
+uvicorn api:app --host 0.0.0.0 --port 8080
+
+# Or run directly
+python api.py
 ```
 
-### Available Commands
+The API will be available at `http://localhost:8080`
 
-Once the chatbot is running, you can use these commands:
+### Testing the API
 
-- `/quit` or `/exit` - Exit the chatbot
-- `/clear` - Clear conversation history
-- `/help` - Show help message
+```bash
+# Test invocation endpoint
+curl -X POST http://localhost:8080/invocations \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Hello, how are you?"}'
 
-### Example Conversation
-
+# Health check
+curl http://localhost:8080/ping
 ```
-You: Hello, my name is Alex
-AI: Hello Alex! It's nice to meet you. How can I help you today?
 
-You: What's my name?
-AI: Your name is Alex, as you just told me!
+### API Endpoints
 
-You: /clear
-Conversation history cleared.
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/ping` | GET | Health check |
+| `/invocations` | POST | Chat with the AI |
 
-You: What's my name?
-AI: I don't know your name. Could you tell me?
+### Request/Response Format
 
-You: /quit
-Goodbye! Thanks for chatting.
+**Request:**
+```json
+{
+  "message": "Your question here"
+}
+```
+
+**Response:**
+```json
+{
+  "response": "AI response here"
+}
+```
+
+## Docker Deployment
+
+### Build Docker Image
+
+```bash
+docker build -t baseballgo .
+```
+
+### Run Docker Container
+
+```bash
+docker run -p 8080:8080 \
+  -e OPENAI_API_KEY=sk-your-key-here \
+  -e MODEL_NAME=gpt-4o-mini \
+  baseballgo
+```
+
+### Deploy to AWS ECR
+
+```bash
+# Login to ECR
+aws ecr get-login-password --region us-east-1 | \
+  docker login --username AWS --password-stdin \
+  YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com
+
+# Build ARM64 image for AWS
+docker buildx build --platform linux/arm64 \
+  -t YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/baseballgo:latest \
+  --push .
 ```
 
 ## Configuration
 
-You can customize the chatbot behavior by editing the `.env` file:
+Environment variables:
 
 - `OPENAI_API_KEY` - Your OpenAI API key (required)
 - `MODEL_NAME` - The OpenAI model to use (default: `gpt-4o-mini`)
-  - Options: `gpt-4o-mini`, `gpt-4`, `gpt-3.5-turbo`, etc.
-- `MAX_HISTORY_LENGTH` - Number of conversation turns to remember (default: `10`)
+  - Options: `gpt-4o-mini`, `gpt-4o`, `gpt-4`, etc.
 
 ## Project Structure
 
@@ -113,30 +157,44 @@ You can customize the chatbot behavior by editing the `.env` file:
 BaseballGo/
 ├── .env                    # Environment variables (not in git)
 ├── .gitignore              # Git ignore file
+├── .dockerignore           # Docker ignore file
+├── Dockerfile              # Docker container definition
 ├── requirements.txt        # Python dependencies
 ├── README.md               # This file
-├── main.py                 # Entry point and chat loop
-├── chatbot.py              # Core chatbot logic
+├── CLAUDE.md               # Developer documentation
+├── api.py                  # FastAPI REST API
+├── chatbot.py              # Chatbot logic
 └── config.py               # Configuration loading
 ```
 
-## How It Works
+## Architecture
 
 1. **Configuration Loading** (`config.py`): Loads and validates environment variables
-2. **Chatbot Logic** (`chatbot.py`): Integrates LangChain with OpenAI's API and manages conversation memory
-3. **Main Loop** (`main.py`): Handles user input, displays responses, and processes commands
+2. **Chatbot Logic** (`chatbot.py`): LangChain chain with OpenAI LLM
+3. **API Layer** (`api.py`): FastAPI REST endpoints for AgentCore compatibility
 
-The chatbot uses LangChain's `ConversationBufferWindowMemory` to maintain a sliding window of recent conversation turns, preventing token limit issues while maintaining context.
+**Note:** This chatbot does not maintain conversation history between requests. Each request is independent.
+
+## AWS Bedrock AgentCore Deployment
+
+This API is designed for AWS Bedrock AgentCore Runtime:
+
+1. Build and push Docker image to ECR (see above)
+2. Create AgentCore runtime agent pointing to your ECR image
+3. Configure the agent to use port 8080
+4. Test using AgentCore Test Sandbox
+
+The `/ping` endpoint is used by AgentCore for health checks, and `/invocations` is the primary chat endpoint.
 
 ## Troubleshooting
 
 ### "OPENAI_API_KEY not found" error
 
-Make sure you've created a `.env` file and added your actual API key.
+Make sure you've created a `.env` file with your actual API key, or passed it as an environment variable to Docker.
 
 ### "Rate limit reached" error
 
-You've exceeded your OpenAI API rate limit. Wait a few moments and try again.
+You've exceeded your OpenAI API rate limit. Wait a few moments and try again, or upgrade your OpenAI plan.
 
 ### Import errors
 
@@ -145,9 +203,16 @@ Make sure you've installed all dependencies:
 pip install -r requirements.txt
 ```
 
-### Virtual environment issues
+### Docker build fails on Python 3.14
 
-Make sure your virtual environment is activated before running the chatbot.
+Use Python 3.12 instead. Python 3.14 lacks pre-built wheels for many packages.
+
+## Future Enhancements
+
+To add conversation history across container instances:
+- Implement DynamoDB-based session storage
+- Use Redis for caching chat history
+- Add session ID to request/response flow
 
 ## Contributing
 

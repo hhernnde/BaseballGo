@@ -7,7 +7,7 @@ def load_config():
     Load configuration from environment variables.
 
     Returns:
-        dict: Configuration dictionary with api_key, model_name, and max_history
+        dict: Configuration dictionary with api_key and model_name
 
     Raises:
         ValueError: If required configuration is missing or invalid
@@ -31,10 +31,8 @@ def load_config():
 
     # Get optional configuration with defaults
     model_name = os.getenv("MODEL_NAME", "gpt-4o-mini")
-    max_history = int(os.getenv("MAX_HISTORY_LENGTH", "10"))
 
     return {
         "api_key": api_key,
-        "model_name": model_name,
-        "max_history": max_history
+        "model_name": model_name
     }
