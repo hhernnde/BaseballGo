@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from chatbot import Chatbot
@@ -8,20 +9,13 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize FastAPI app
-app = FastAPI(
-    title="AI Chatbot API",
-    description="A conversational AI chatbot powered by OpenAI and LangChain",
-    version="1.0.0"
-)
-
-# Initialize chatbot on startup
+# Global chatbot instance
 chatbot = None
 
 
-@app.on_event("startup")
-async def startup_event():
-    """Initialize the chatbot on application startup."""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage application lifespan - initialize chatbot on startup."""
     global chatbot
     try:
         config = load_config()
@@ -30,6 +24,16 @@ async def startup_event():
     except Exception as e:
         logger.error(f"Failed to initialize chatbot: {e}")
         raise
+    yield
+
+
+# Initialize FastAPI app with lifespan
+app = FastAPI(
+    title="AI Chatbot API",
+    description="A conversational AI chatbot powered by OpenAI and LangChain",
+    version="1.0.0",
+    lifespan=lifespan
+)
 
 
 class ChatRequest(BaseModel):

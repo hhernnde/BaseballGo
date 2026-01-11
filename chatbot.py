@@ -1,5 +1,6 @@
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 import openai
 
 
@@ -29,8 +30,8 @@ class Chatbot:
                 ("human", "{input}")
             ])
 
-            # Create chain
-            self.chain = self.prompt | self.llm
+            # Create chain with output parser
+            self.chain = self.prompt | self.llm | StrOutputParser()
 
         except Exception as e:
             raise RuntimeError(f"Failed to initialize chatbot: {str(e)}")
@@ -48,7 +49,7 @@ class Chatbot:
         try:
             # Invoke chain
             response = self.chain.invoke({"input": user_input})
-            return response.content
+            return response
 
         except openai.RateLimitError:
             return "Error: Rate limit reached. Please try again later."
